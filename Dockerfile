@@ -7,5 +7,8 @@ WORKDIR /code
 # copy the content of the local src directory to the working directory
 COPY app/ .
 
+EXPOSE 5000/tcp
+EXPOSE 5000/udp
+
 # command to run on container start
 CMD [ "python", "./simple-servicetag-generator.py" ] 

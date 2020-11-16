@@ -8,7 +8,13 @@ EXPOSE 5000/udp
 WORKDIR /code
 
 # copy the content of the local src directory to the working directory
-COPY app/ .
+COPY app/requirements.txt .
+
+# copy the content of the local src directory to the working directory
+COPY app/bottle.py .
+
+# copy the content of the local src directory to the working directory
+COPY app/simple-servicetag-generator.py .
 
 # command to run on container start
 CMD [ "python", "./simple-servicetag-generator.py" ] 

@@ -16,5 +16,16 @@ def hello():
 	basic_id = "".join(basic_id_parts)
 	return "{0}".format(basic_id)
 
+@route('/simplepassword')
+def hello():
+	basic_id_parts = []
+	basic_id_parts.append(secure_random.choice(prefixlist_international).capitalize())
+	basic_id_parts.append("-")
+	basic_id_parts.append(secure_random.choice(prefixlist_international).capitalize())
+	basic_id_parts.append("-")
+	basic_id_parts.append(str(secure_random.randint(-1,upper_limit)).zfill(3))
+	basic_id = "".join(basic_id_parts)
+	return "{0}".format(basic_id)
+
 
 run(host='0.0.0.0', port=80, debug=True)

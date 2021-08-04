@@ -1,4 +1,5 @@
 import random
+import string
 import secrets
 
 from bottle import route, run
@@ -51,6 +52,6 @@ def generate():
 
 @route('/v1/short-token')
 def generate():
-	return "{0}".format("#" + secrets.token_urlsafe(7).upper())
+	return "{0}".format("#" + ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(9)))
 
 run(host='0.0.0.0', port=80, debug=True)

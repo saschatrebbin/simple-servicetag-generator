@@ -27,7 +27,7 @@ def generate():
 	basic_id_parts.append("-")
 	basic_id_parts.append(secrets.choice(prefixlist_international).capitalize())
 	basic_id_parts.append("-")
-	basic_id_parts.append(str(str(secrets.randbelow(1000)).zfill(3))
+	basic_id_parts.append(str(secrets.randbelow(1000)).zfill(3))
 	basic_id = "".join(basic_id_parts)
 	return "{0}".format(basic_id)
 

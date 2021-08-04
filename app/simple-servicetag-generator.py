@@ -51,6 +51,6 @@ def generate():
 
 @route('/v1/short-token')
 def generate():
-	return "{0}".format("#" + secrets.token_urlsafe(7))
+	return "{0}".format("#" + secrets.token_urlsafe(7).upper())
 
 run(host='0.0.0.0', port=80, debug=True)

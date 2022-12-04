@@ -8,7 +8,7 @@ WORKDIR /code
 COPY app/requirements.txt .
 
 # copy the content of the local src directory to the working directory
-COPY app/bottle.py .
+#COPY app/bottle.py .
 
 # copy the content of the local src directory to the working directory
 COPY app/simple-servicetag-generator.py .

@@ -1,6 +1,7 @@
 import random
 import string
 import secrets
+import os
 
 from bottle import route, run
 
@@ -54,4 +55,4 @@ def generate():
 def generate():
 	return "{0}".format("#" + ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(9)))
 
-run(host='0.0.0.0', port=80, debug=True)
+run(host=os.getenv('APP_IP', '0.0.0.0'), port=os.getenv('APP_PORT', '3000'), debug=os.getenv('APP_DEBUG', 'false'))

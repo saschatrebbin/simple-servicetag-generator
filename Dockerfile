@@ -13,5 +13,8 @@ COPY app/bottle.py .
 # copy the content of the local src directory to the working directory
 COPY app/simple-servicetag-generator.py .
 
+# install dependencies
+RUN pip3 install -r requirements.txt
+
 # command to run on container start
 CMD [ "python", "./simple-servicetag-generator.py" ] 

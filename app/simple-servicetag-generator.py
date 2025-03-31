@@ -8,6 +8,7 @@ import json
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
+import bottle
 from bottle import route, run, request, response, HTTPError
 
 secure_random = random.SystemRandom()

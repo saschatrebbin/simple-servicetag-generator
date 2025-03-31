@@ -1,3 +1,5 @@
+import datetime
+import time
 import random
 import string
 import secrets
@@ -9,10 +11,32 @@ from xml.dom import minidom
 from bottle import route, run, request, response, HTTPError
 
 secure_random = random.SystemRandom()
+start_time = time.time()
+request_count = 0
 
 prefixlist_international = ("alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "hotel", "india", "juliett", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey", "xray", "yankee", "zulu")
 upper_limit = 999
 padding = 3
+
+@route('/health')
+def health_check():
+    global request_count
+
+    uptime = time.time() - start_time
+    
+    response.content_type = 'application/json'
+    return json.dumps({
+        'status': 'healthy',
+        'timestamp': datetime.datetime.now().isoformat(),
+        'uptime_seconds': round(uptime, 2),
+        'requests_processed': request_count
+    })
+
+# Middleware zum Zählen der Anfragen
+@bottle.hook('after_request')
+def count_request():
+    global request_count
+    request_count += 1
 
 # v1 routes
 @route('/v1/servicetag')

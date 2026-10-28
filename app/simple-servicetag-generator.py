@@ -6,6 +6,9 @@ import string
 import secrets
 import os
 import json
+import csv
+import html
+import io
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
@@ -16,7 +19,7 @@ secure_random = random.SystemRandom()
 start_time = time.time()
 request_count = 0
 
-prefixlist_international = ("alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "hotel", "india", "juliett", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey", "xray", "yankee", "zulu")
+prefixlist_international = ("alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliett", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey", "xray", "yankee", "zulu")
 upper_limit = 999
 padding = 3
 
@@ -86,20 +89,19 @@ def generate_short_token():
     return "{0}".format("#" + ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(9)))
 
 # v2 routes
+def _generate_word_parts(word_count, number_count):
+    """Choose the words and number block once for all representations."""
+    words = [secrets.choice(prefixlist_international).capitalize()
+             for _ in range(word_count)]
+    number = (str(secrets.randbelow(10 ** number_count)).zfill(number_count)
+              if number_count > 0 else None)
+    return words, number
+
+
 def generate_password(word_count=2, number_count=3, separator="-"):
-    """Generate a password with the specified parameters"""
-    parts = []
-
-    # Add words
-    for _ in range(word_count):
-        parts.append(secrets.choice(prefixlist_international).capitalize())
-
-    # Add numbers
-    if number_count > 0:
-        parts.append(str(secrets.randbelow(10**number_count)).zfill(number_count))
-
-    # Join with separator
-    return separator.join(parts)
+    """Generate a password with the specified parameters."""
+    words, number = _generate_word_parts(word_count, number_count)
+    return separator.join(words + ([number] if number is not None else []))
 
 def format_response(password, format_type):
     """Format the password according to the requested format"""
@@ -170,6 +172,128 @@ def v2_password(format_type='text'):
 def api_v2_password(format_type='text'):
     """Alternative route with /api prefix"""
     return v2_password(format_type)
+
+
+# ---------------------------------------------------------------------------
+# Identifier: one set of random components, two related representations.
+# ---------------------------------------------------------------------------
+
+def _identifier_generate_one(word_count, number_count, separator, prefix):
+    words, number = _generate_word_parts(word_count, number_count)
+    long_parts = words + ([number] if number is not None else [])
+    short_parts = ["".join(word[0].upper() for word in words)]
+    if number is not None:
+        short_parts.append(number)
+    return {
+        "long": prefix + separator.join(long_parts),
+        "short": prefix + separator.join(short_parts),
+    }
+
+
+class IdentifierGenerationExhausted(Exception):
+    """The bounded random retry budget was exhausted."""
+
+
+def _identifier_generate_unique(count, words, numbers, separator, prefix):
+    # Distinct initials determine the short form, even if the word list changes.
+    pool_size = len({word[0].upper() for word in prefixlist_international}) ** words * 10 ** numbers
+    if count > pool_size:
+        raise ValueError("'count' exceeds the number of possible short identifiers.")
+    identifiers, seen = [], set()
+    # Limit work even when the requested count nearly exhausts the available pool.
+    for _ in range(max(1000, count * 100)):
+        item = _identifier_generate_one(words, numbers, separator, prefix)
+        if item["short"] not in seen:
+            identifiers.append(item)
+            seen.add(item["short"])
+            if len(identifiers) == count:
+                return identifiers
+    raise IdentifierGenerationExhausted("Unable to generate enough distinct short identifiers; reduce count or increase words or numbers.")
+
+
+def _identifier_format_response(identifiers, meta, format_type):
+    if format_type == 'json':
+        response.content_type = 'application/json'
+        return json.dumps(dict(identifiers=identifiers, **meta))
+    if format_type == 'xml':
+        response.content_type = 'application/xml'
+        root = Element('response')
+        SubElement(root, 'count').text = str(len(identifiers))
+        entries = SubElement(root, 'identifiers')
+        for item in identifiers:
+            entry = SubElement(entries, 'identifier')
+            SubElement(entry, 'long').text = item['long']
+            SubElement(entry, 'short').text = item['short']
+        return minidom.parseString(tostring(root)).toprettyxml(indent='  ')
+    if format_type == 'csv':
+        response.content_type = 'text/csv; charset=utf-8'
+        output = io.StringIO(newline='')
+        writer = csv.writer(output, lineterminator='\n')
+        writer.writerow(['long', 'short'])
+        for item in identifiers:
+            writer.writerow([item['long'], item['short']])
+        return output.getvalue()
+    if format_type == 'html':
+        response.content_type = 'text/html; charset=utf-8'
+        rows = []
+        for i, item in enumerate(identifiers):
+            long_value, short_value = html.escape(item['long']), html.escape(item['short'])
+            rows.append(f'<li><span id="long-{i}">{long_value}</span> '
+                        f'(<span id="short-{i}">{short_value}</span>) '
+                        f'<button type="button" onclick="copyValue({i}, \'long\')">Langform kopieren</button> '
+                        f'<button type="button" onclick="copyValue({i}, \'short\')">Kurzform kopieren</button> '
+                        f'<button type="button" onclick="copyValue({i}, \'both\')">Beide kopieren</button></li>')
+        return """<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><title>Identifier</title>
+<style>body { font-family: Arial, sans-serif; margin: 3em auto; max-width: 70em; padding: 0 1em; }
+li { padding: .7em 0; } button { margin: .2em; cursor: pointer; } span { font-family: monospace; }</style>
+</head><body><h1>Identifier</h1><ul>""" + ''.join(rows) + """</ul>
+<button type="button" onclick="copyAll()">Alle kopieren</button>
+<script>
+function value(i, part) { return document.getElementById(part + '-' + i).textContent; }
+function copyValue(i, part) {
+  const text = part === 'both' ? value(i, 'long') + ' (' + value(i, 'short') + ')' : value(i, part);
+  navigator.clipboard.writeText(text);
+}
+function copyAll() {
+  const items = document.querySelectorAll('li');
+  navigator.clipboard.writeText(Array.from(items, (_, i) => value(i, 'long') + ' (' + value(i, 'short') + ')').join('\\n'));
+}
+</script></body></html>"""
+    response.content_type = 'text/plain; charset=utf-8'
+    return ''.join(item['long'] + ' (' + item['short'] + ')\n' for item in identifiers)
+
+
+@route('/v2/identifier')
+@route('/v2/identifier.<format_type>')
+@route('/api/v2/identifier')
+@route('/api/v2/identifier.<format_type>')
+def v2_identifier(format_type='text'):
+    if format_type not in ('text', 'json', 'html', 'csv', 'xml'):
+        return HTTPError(400, "Unsupported format; use text, json, html, csv or xml.")
+    try:
+        words = int(request.query.get('words', 5))
+        numbers = int(request.query.get('numbers', 3))
+        count = int(request.query.get('count', 1))
+    except (ValueError, TypeError):
+        return HTTPError(400, "'words', 'numbers' and 'count' must be integers.")
+    if not 1 <= words <= 20 or not 0 <= numbers <= 20 or not 1 <= count <= 1000:
+        return HTTPError(400, "'words' must be 1-20, 'numbers' 0-20 and 'count' 1-1000.")
+    separator = request.query.get('separator', '-')
+    if len(separator) != 1 or separator not in string.punctuation:
+        return HTTPError(400, "'separator' must be a single punctuation character.")
+    prefix = request.query.get('prefix', '')
+    # Control characters would make line-oriented text and XML ambiguous or invalid.
+    if len(prefix) > 64 or any(ord(c) < 32 or 127 <= ord(c) <= 159 or 0xD800 <= ord(c) <= 0xDFFF or ord(c) in (0xFFFE, 0xFFFF) for c in prefix):
+        return HTTPError(400, "'prefix' must be at most 64 characters without control characters.")
+    try:
+        identifiers = _identifier_generate_unique(count, words, numbers, separator, prefix)
+    except ValueError as exc:
+        return HTTPError(400, str(exc))
+    except IdentifierGenerationExhausted as exc:
+        return HTTPError(503, str(exc))
+    meta = dict(count=count, words=words, numbers=numbers, separator=separator, prefix=prefix)
+    return _identifier_format_response(identifiers, meta, format_type)
 
 
 # ---------------------------------------------------------------------------
@@ -413,4 +537,5 @@ def api_v2_nanoid(format_type='text'):
     return _nanoid_format_response(ids, col_prob_pct, meta, format_type)
 
 
-run(host=os.getenv('APP_IP', '0.0.0.0'), port=os.getenv('APP_PORT', '3000'), debug=os.getenv('APP_DEBUG', 'false'))
+if __name__ == '__main__':
+    run(host=os.getenv('APP_IP', '0.0.0.0'), port=os.getenv('APP_PORT', '3000'), debug=os.getenv('APP_DEBUG', 'false'))

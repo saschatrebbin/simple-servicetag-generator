@@ -29,6 +29,6 @@ The shared word list now includes `golf`; consequently, it can also occur in exi
 
 ## Tests and container
 
-Run `python -m unittest discover -s tests -v` with the application's dependencies installed (`pip install -r app/requirements.txt`). The publishing workflow runs these tests with Python 3.9 before building and pushing an image. The Dockerfile copies only the application and its runtime requirements; tests and test output are also excluded from the Docker build context.
+Run `python -m unittest discover -s tests -v` with the application's dependencies installed (`pip install -r app/requirements.txt`). The application image uses Python 3.14. Pull requests targeting `master` run tests on Python 3.14, build the Docker image without publishing it, and smoke-test the running container. Pushes to `master` run the same checks before publishing the image to GitHub Container Registry. The Dockerfile copies only the application and its runtime requirements; tests and test output are also excluded from the Docker build context.
 
 Further documentation of the existing endpoints and project architecture is tracked separately in [#1](https://github.com/saschatrebbin/simple-servicetag-generator/issues/1) and [#3](https://github.com/saschatrebbin/simple-servicetag-generator/issues/3).

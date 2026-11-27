@@ -2,6 +2,10 @@
 
 A small web service for generating identifiers and passwords, originally also used for naming XCOM 2 campaigns.
 
+## Debug configuration
+
+For the regular application start, `APP_DEBUG` is disabled when unset, empty, or set to `false`, `0`, `no`, or `off`. Use `true`, `1`, `yes`, or `on` to enable it. Values are case-insensitive and surrounding whitespace is ignored. Other values cause a startup error. Enabling debug mode can expose diagnostic details in HTTP error responses. See the [architecture overview](docs/architecture.md#5-configuration-and-deployment) for the configuration context.
+
 ## V2 identifier
 
 `GET /v2/identifier` and `GET /api/v2/identifier` generate a human-readable identifier and an abbreviation from the same randomly selected words and digits. Without a format suffix, the response is plain text. Add `.text`, `.json`, `.html`, `.csv`, or `.xml` to the path to select a format.
@@ -29,6 +33,9 @@ The shared word list now includes `golf`; consequently, it can also occur in exi
 
 ## Tests and container
 
-Run `python -m unittest discover -s tests -v` with the application's dependencies installed (`pip install -r app/requirements.txt`). The application image uses Python 3.14. Pull requests targeting `master` run tests on Python 3.14, build the Docker image without publishing it, and smoke-test the running container. Pushes to `master` run the same checks before publishing the image to GitHub Container Registry. The Dockerfile copies only the application and its runtime requirements; tests and test output are also excluded from the Docker build context.
+Run `python -m unittest discover -s tests -v` with the application's dependencies installed (`python -m pip install -r app/requirements.txt`). See [running tests](docs/workflows.md#running-tests) for individual test commands and the test-only workflow for `development`.
 
-Further documentation of the existing endpoints and project architecture is tracked separately in [#1](https://github.com/saschatrebbin/simple-servicetag-generator/issues/1) and [#3](https://github.com/saschatrebbin/simple-servicetag-generator/issues/3).
+The application image uses Python 3.14. Pull requests targeting `master` run tests on Python 3.14, build the Docker image without publishing it, and smoke-test the running container. Pushes to `master` run the same checks before publishing the image to GitHub Container Registry. The Dockerfile copies only the application and its runtime requirements; tests and test output are also excluded from the Docker build context.
+
+See the [architecture overview](docs/architecture.md), [project scope](docs/scope.md), and [cryptographic foundations](docs/cryptography.md) for further details.
+

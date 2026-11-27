@@ -1,6 +1,6 @@
 # Workflows
 
-This document initially describes the project's decision workflow. Other recurring workflows can be agreed and documented when needed.
+This document describes the project's decision and test-execution workflows. Other recurring workflows can be agreed and documented when needed.
 
 ## Decision workflow
 
@@ -47,3 +47,29 @@ For a later new or substantively changed decision, use a new issue to capture th
 Keep each earlier record in place as its historical account. If its status changes, update only its status and status date; leave its original content and decision date intact. A review alone does not make the earlier decision obsolete. If only part is replaced, make the scope clear in the new record and choose the earlier record's status to reflect what remains applicable.
 
 The earlier issue remains a completed historical record. An additional comment may link to the new issue and decision; reopening or rewriting the earlier issue is not required. Update other affected current documentation when the new state takes effect, while preserving relevant history in accordance with `AGENTS.md`.
+
+## Running tests
+
+Install the application's runtime dependency from the repository root, then run the full suite:
+
+```bash
+python -m pip install -r app/requirements.txt
+python -m unittest discover -s tests -v
+```
+
+Run one test file or one test case when a narrower check is useful:
+
+```bash
+# One test file
+python -m unittest discover -s tests -p test_debug.py -v
+
+# One test case
+python tests/test_debug.py DebugStartupTests.test_invalid_values_fail_before_server_start -v
+```
+
+The [development test workflow](../.github/workflows/test-development.yml) runs the complete suite on Python 3.14 when a commit is pushed to `development`. It does not build or publish a container image.
+
+In GitHub Actions, a completed run can be repeated with **Re-run jobs** or **Re-run all jobs**. A repeated run uses the same commit as the original, not necessarily the latest branch head. GitHub permits re-runs within 30 days of the initial run.
+
+The workflow also defines `workflow_dispatch`, with the test job limited to the `development` ref. GitHub requires the workflow file to exist on the repository's default branch before a new manual run can be started with **Run workflow**. Until then, use a development push or repeat an existing run. See [GitHub's manual-run documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow) and the [decision record](decisions/0002-development-test-workflow.md).
+

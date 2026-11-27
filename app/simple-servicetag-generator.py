@@ -537,5 +537,22 @@ def api_v2_nanoid(format_type='text'):
     return _nanoid_format_response(ids, col_prob_pct, meta, format_type)
 
 
+def _parse_debug(value: str) -> bool:
+    """Interpret APP_DEBUG explicitly so non-empty false values do not enable debugging."""
+    normalized = value.strip().lower()
+    if normalized in {'true', '1', 'yes', 'on'}:
+        return True
+    if normalized in {'false', '0', 'no', 'off', ''}:
+        return False
+    raise ValueError(
+        'Invalid APP_DEBUG value: use true/1/yes/on, false/0/no/off, or an empty value.'
+    )
+
+
 if __name__ == '__main__':
-    run(host=os.getenv('APP_IP', '0.0.0.0'), port=os.getenv('APP_PORT', '3000'), debug=os.getenv('APP_DEBUG', 'false'))
+    run(
+        host=os.getenv('APP_IP', '0.0.0.0'),
+        port=os.getenv('APP_PORT', '3000'),
+        debug=_parse_debug(os.getenv('APP_DEBUG', 'false')),
+    )
+

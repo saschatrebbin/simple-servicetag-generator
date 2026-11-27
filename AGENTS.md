@@ -92,7 +92,7 @@ The following must exist and be kept up to date as the authoritative reference f
 |---|---|
 | **Architecture overview** | System structure, component responsibilities, relationships |
 | **Scope definition** | What is in scope, what is explicitly out of scope, and why |
-| **Standard workflows** | Initially the decision workflow; other recurring workflows are added when agreed |
+| **Standard workflows** | The decision workflow and other agreed recurring workflows; further workflows are added when agreed |
 | **Decision records** | Individual records of key decisions, their reasoning, dates, and decision makers |
 
 When a decision changes:
@@ -195,4 +195,5 @@ Issues are the primary coordination layer between the user and the agent.
 
 Speed is not a goal in itself. A slower, coherent, well-documented result is always preferred over a
 faster one that leaves gaps.
+
 

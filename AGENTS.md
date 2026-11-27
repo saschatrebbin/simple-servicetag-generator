@@ -75,7 +75,7 @@ Code explains *how*. Documentation explains *what* and *why*. The agent must tre
 
 ### Dedicated Documentation Files
 For anything that cannot be expressed inline:
-- Architecture decisions → `docs/decisions/` (or ADR format)
+- Important decisions → individual records in `docs/decisions/`
 - Module/system overviews → `docs/`
 - Runbooks and operational context → `docs/runbooks/`
 
@@ -92,15 +92,23 @@ The following must exist and be kept up to date as the authoritative reference f
 |---|---|
 | **Architecture overview** | System structure, component responsibilities, relationships |
 | **Scope definition** | What is in scope, what is explicitly out of scope, and why |
-| **Standard workflows** | How recurring tasks are handled (branching, review, deployment, etc.) |
-| **Decision log** | Key decisions, the reasoning behind them, the date, and who approved |
+| **Standard workflows** | Initially the decision workflow; other recurring workflows are added when agreed |
+| **Decision records** | Individual records of key decisions, their reasoning, dates, and decision makers |
 
 When a decision changes:
-1. Update the relevant document to reflect the new state.
-2. Move the superseded content into a clearly marked history section or archive file — do not delete it.
-3. Note when and why the change was made.
+1. Discuss a later new or substantively changed decision in a new issue and create a new decision record.
+2. Link the earlier decision records and their issues from the new record, explaining the change and its rationale.
+3. Keep an earlier decision record in place as its historical account. If its status changes, update only its status
+   and status date; preserve its original content and decision date. A review alone does not supersede a decision.
+4. Update affected current documentation to reflect the new state. Preserve relevant superseded content in a clearly
+   marked history section or archive file and note when and why it changed.
 
-If any of these documents are missing or incomplete, flag the gap before starting new feature work.
+The decisions directory may initially contain a placeholder until the first record is added. The directory listing
+is the overview; no separately maintained or generated index is required. See `docs/workflows.md` for the complete
+decision workflow.
+
+If a required document or an agreed workflow is missing or incomplete, flag the gap before starting new feature work.
+Other recurring workflows can be agreed and documented later; their absence alone does not block work.
 
 ---
 
@@ -121,8 +129,8 @@ any code.
 
 ### During Implementation
 Keep the plan current:
-- Mark completed steps.
-- Note unexpected findings, blockers, or scope changes.
+- Report completed steps in new issue comments.
+- Note unexpected findings, blockers, or scope changes in new comments.
 - Flag any new decisions that arose and required a choice.
 
 ### Why This Matters
@@ -161,8 +169,10 @@ For a new module, it might warrant a dedicated analysis step. Use judgment, but 
 Issues are the primary coordination layer between the user and the agent.
 
 - **One concern per issue.** Do not bundle unrelated topics.
-- **Status must be visible in the issue.** Use the implementation plan (see §5) as a living checklist,
-  updated as work progresses.
+- **Preserve the issue text.** Add plans, progress, decisions, and links as new comments instead of editing the
+  original description. Keep the chronological discussion visible for every issue.
+- **Status must be visible in the issue.** Report implementation-plan progress (see §5) through new comments
+  as work progresses.
 - **Link related issues.** Cross-reference dependencies, predecessors, and follow-ups explicitly.
 - **Close only when done.** An issue is done when the implementation is merged, tested, and documented —
   not when the code is written.
@@ -185,3 +195,4 @@ Issues are the primary coordination layer between the user and the agent.
 
 Speed is not a goal in itself. A slower, coherent, well-documented result is always preferred over a
 faster one that leaves gaps.
+

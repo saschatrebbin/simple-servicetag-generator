@@ -77,13 +77,17 @@ These values are not shared across separate processes or installations and do no
 |---|---|---|
 | `APP_IP` | `0.0.0.0` | Bind address passed to Bottle. |
 | `APP_PORT` | `3000` | Port passed to Bottle. |
-| `APP_DEBUG` | `false` as a string | Passed directly as a string to Bottle's debug argument; it is not parsed as a boolean by the application. |
+| `APP_DEBUG` | `False` | Parsed as a Boolean and passed to Bottle's debug argument. |
 
-With the regular application start, the default string `false` is non-empty and therefore enables Bottle's debug mode. Setting `APP_DEBUG=false` has the same effect. Debug error responses can expose traceback details; the value shown in the table does not mean debug mode is disabled.
+For the regular application start, the variable is case-insensitive and surrounding whitespace is ignored. `true`, `1`, `yes`, and `on` enable debugging; `false`, `0`, `no`, `off`, an empty value, or an unset variable disable it. Other values cause a startup error before the server starts. Debug error responses can expose traceback details when debugging is enabled. The choice and alternatives are recorded in the [APP_DEBUG decision](decisions/0001-parse-app-debug-as-boolean.md).
 
 The checked-in Dockerfile uses `python:3.14-slim`, copies the application and `app/requirements.txt` into `/code`, installs the Bottle dependency (`bottle<=0.13`), and runs the Python application. It declares no application data volume. Actual port publishing, reverse proxies, TLS, and any access restrictions are deployment decisions outside the Dockerfile.
 
 The repository also contains a vendored `app/bottle.py` development snapshot. It is not copied into the container image. Local execution can resolve this file differently from the container, and the tests use it as a fallback when no installed Bottle package is found.
+
+### Previous debug behaviour
+
+Before the correction first committed on 2026-11-27, the default string `false` was passed directly to Bottle. Because it is non-empty, it enabled debug mode; setting `APP_DEBUG=false` had the same effect and HTTP errors could expose traceback details. See [issue #25](https://github.com/saschatrebbin/simple-servicetag-generator/issues/25) for the problem and its resolution.
 
 ## 6. Security and operational context
 
@@ -93,7 +97,7 @@ Generator randomness, entropy, collision limits, and suitable-use considerations
 
 ## 7. Tests, build, and publication
 
-GitHub Actions runs the workflow for pull requests targeting `master` and pushes to `master`. The test job installs the runtime dependency and runs the existing Python unit tests under Python 3.14. A following job builds a local image and smoke-tests `/health` and the V2 Identifier endpoint. Only a successful push to `master` proceeds to the separate build-and-publish job for GitHub Container Registry.
+The GitHub Actions build-and-publish workflow runs for pull requests targeting `master` and pushes to `master`. Its test job installs the runtime dependency and runs the Python unit tests under Python 3.14. A following job builds a local image and smoke-tests `/health` and the V2 Identifier endpoint. Only a successful push to `master` proceeds to the separate build-and-publish job for GitHub Container Registry.
 
 ```mermaid
 flowchart TD
@@ -105,7 +109,9 @@ flowchart TD
     Event -->|"No"| Done["Checks complete"]
 ```
 
-The publish job performs its own image build after the smoke-test job. The existing unit tests focus on the V2 Identifier and password regressions; the smoke test covers health and identifier access.
+The publish job performs its own image build after the smoke-test job. The unit tests cover the V2 Identifier, password regressions, and `APP_DEBUG` startup and HTTP error handling; the smoke test covers health and identifier access.
+
+A separate test-only workflow runs the full suite under Python 3.14 when `development` is pushed. It neither builds nor publishes an image. It also prepares a manually dispatched run for `development`; GitHub requires the workflow file on the default branch before a new manual dispatch is available. See [running tests](workflows.md#running-tests) and the [development test decision](decisions/0002-development-test-workflow.md).
 
 ## 8. Related documents
 
@@ -113,5 +119,6 @@ The publish job performs its own image build after the smoke-test job. The exist
 - [Cryptographic foundations and limitations](cryptography.md)
 - [Decision workflow](workflows.md)
 - [README](../README.md)
+
 
 

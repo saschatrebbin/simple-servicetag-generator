@@ -12,6 +12,7 @@ COPY app/requirements.txt .
 
 # copy the content of the local src directory to the working directory
 COPY app/simple-servicetag-generator.py .
+COPY app/templates/ ./templates/
 
 # install dependencies
 RUN pip3 install -r requirements.txt

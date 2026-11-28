@@ -50,7 +50,7 @@ The earlier issue remains a completed historical record. An additional comment m
 
 ## Running tests
 
-Install the application's runtime dependency from the repository root, then run the full suite:
+Install the application's runtime dependency and Node.js 24, then run the full suite from the repository root. Node.js is a test dependency; it is not required in the application container. The Python test command also starts the shared clipboard script's Node.js tests and fails if Node.js is unavailable:
 
 ```bash
 python -m pip install -r app/requirements.txt
@@ -65,11 +65,14 @@ python -m unittest discover -s tests -p test_debug.py -v
 
 # One test case
 python tests/test_debug.py DebugStartupTests.test_invalid_values_fail_before_server_start -v
+
+# Clipboard tests directly
+node --test tests/clipboard.test.js
 ```
 
-The [development test workflow](../.github/workflows/test-development.yml) runs the complete suite on Python 3.14 when a commit is pushed to `development`. It does not build or publish a container image.
+The [development test workflow](../.github/workflows/test-development.yml) runs the complete suite on Python 3.14 and Node.js 24 when a commit is pushed to `development`. It does not build or publish a container image.
 
 In GitHub Actions, a completed run can be repeated with **Re-run jobs** or **Re-run all jobs**. A repeated run uses the same commit as the original, not necessarily the latest branch head. GitHub permits re-runs within 30 days of the initial run.
 
-The workflow also defines `workflow_dispatch`, with the test job limited to the `development` ref. GitHub requires the workflow file to exist on the repository's default branch before a new manual run can be started with **Run workflow**. Until then, use a development push or repeat an existing run. See [GitHub's manual-run documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow) and the [decision record](decisions/0002-development-test-workflow.md).
+The workflow also defines `workflow_dispatch`, with the test job limited to the `development` ref. GitHub requires the workflow file to exist on the repository's default branch before a new manual run can be started with **Run workflow**. See [GitHub's manual-run documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow) and the [decision record](decisions/0002-development-test-workflow.md).
 

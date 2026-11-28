@@ -7,8 +7,8 @@ import secrets
 import os
 import json
 import csv
-import html
 import io
+from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
@@ -18,6 +18,8 @@ from bottle import route, run, request, response, HTTPError
 secure_random = random.SystemRandom()
 start_time = time.time()
 request_count = 0
+# Resolve templates from this module, independently of the process working directory.
+TEMPLATE_LOOKUP = [str(Path(__file__).resolve().parent / 'templates')]
 
 prefixlist_international = ("alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliett", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey", "xray", "yankee", "zulu")
 upper_limit = 999
@@ -122,21 +124,8 @@ def format_response(password, format_type):
         return f"password\n{password}"
 
     elif format_type == 'html':
-        response.content_type = 'text/html'
-        return f"""<!DOCTYPE html>
-<html>
-<head>
-    <title>Generated Password</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }}
-        .password {{ font-size: 24px; padding: 20px; background-color: #f5f5f5; display: inline-block; border-radius: 5px; }}
-    </style>
-</head>
-<body>
-    <h1>Generated Password</h1>
-    <div class="password">{password}</div>
-</body>
-</html>"""
+        response.content_type = 'text/html; charset=utf-8'
+        return bottle.template('password', password=password, template_lookup=TEMPLATE_LOOKUP)
 
     else:  # Default to plain text
         response.content_type = 'text/plain'
@@ -235,31 +224,7 @@ def _identifier_format_response(identifiers, meta, format_type):
         return output.getvalue()
     if format_type == 'html':
         response.content_type = 'text/html; charset=utf-8'
-        rows = []
-        for i, item in enumerate(identifiers):
-            long_value, short_value = html.escape(item['long']), html.escape(item['short'])
-            rows.append(f'<li><span id="long-{i}">{long_value}</span> '
-                        f'(<span id="short-{i}">{short_value}</span>) '
-                        f'<button type="button" onclick="copyValue({i}, \'long\')">Langform kopieren</button> '
-                        f'<button type="button" onclick="copyValue({i}, \'short\')">Kurzform kopieren</button> '
-                        f'<button type="button" onclick="copyValue({i}, \'both\')">Beide kopieren</button></li>')
-        return """<!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8"><title>Identifier</title>
-<style>body { font-family: Arial, sans-serif; margin: 3em auto; max-width: 70em; padding: 0 1em; }
-li { padding: .7em 0; } button { margin: .2em; cursor: pointer; } span { font-family: monospace; }</style>
-</head><body><h1>Identifier</h1><ul>""" + ''.join(rows) + """</ul>
-<button type="button" onclick="copyAll()">Alle kopieren</button>
-<script>
-function value(i, part) { return document.getElementById(part + '-' + i).textContent; }
-function copyValue(i, part) {
-  const text = part === 'both' ? value(i, 'long') + ' (' + value(i, 'short') + ')' : value(i, part);
-  navigator.clipboard.writeText(text);
-}
-function copyAll() {
-  const items = document.querySelectorAll('li');
-  navigator.clipboard.writeText(Array.from(items, (_, i) => value(i, 'long') + ' (' + value(i, 'short') + ')').join('\\n'));
-}
-</script></body></html>"""
+        return bottle.template('identifier', identifiers=identifiers, template_lookup=TEMPLATE_LOOKUP)
     response.content_type = 'text/plain; charset=utf-8'
     return ''.join(item['long'] + ' (' + item['short'] + ')\n' for item in identifiers)
 
@@ -402,71 +367,9 @@ def _nanoid_format_response(ids, col_prob_pct, meta, format_type):
         return "\n".join(lines) + "\n"
 
     elif format_type == 'html':
-        response.content_type = 'text/html'
-        if count == 1:
-            ids_html = f'<div class="id-value" id="id-0">{ids[0]}</div>'
-        else:
-            items = "".join(
-                f'<li><span class="id-value" id="id-{i}">{v}</span>'
-                f'<button class="copy-btn" onclick="copyOne({i})">Kopieren</button></li>'
-                for i, v in enumerate(ids)
-            )
-            ids_html = f'<ul class="id-list">{items}</ul>'
-
-        copy_all_btn = (
-            '<button class="copy-btn copy-all" onclick="copyAll()">Alle kopieren</button>'
-            if count > 1 else
-            '<button class="copy-btn" onclick="copyOne(0)">Kopieren</button>'
-        )
-
-        return f"""<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>Nano IDs</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; text-align: center; margin-top: 50px; color: #333; }}
-        h1   {{ margin-bottom: 0.25em; }}
-        .meta {{ font-size: 0.85em; color: #888; margin-bottom: 1.5em; }}
-        .id-value {{ font-family: monospace; font-size: 1.2em; }}
-        .id-list {{ list-style: none; padding: 0; display: inline-block; text-align: left; }}
-        .id-list li {{ display: flex; align-items: center; gap: 0.75em;
-                       padding: 0.4em 0.6em; border-bottom: 1px solid #eee; }}
-        .id-list li:last-child {{ border-bottom: none; }}
-        .copy-btn {{ cursor: pointer; padding: 0.25em 0.75em; font-size: 0.8em;
-                     border: 1px solid #aaa; border-radius: 4px; background: #f5f5f5; }}
-        .copy-btn:hover {{ background: #e0e0e0; }}
-        .copy-all {{ font-size: 1em; margin-top: 1.2em; padding: 0.4em 1.2em; }}
-        .single-box {{ font-size: 1.5em; padding: 20px 32px; background: #f5f5f5;
-                       display: inline-block; border-radius: 6px; margin-bottom: 1em; }}
-    </style>
-</head>
-<body>
-    <h1>Nano IDs</h1>
-    <p class="meta">
-        {count} ID{'s' if count > 1 else ''} &nbsp;|&nbsp;
-        Länge: {meta['length']} &nbsp;|&nbsp;
-        Alphabet: {meta['alphabet_size']} Zeichen &nbsp;|&nbsp;
-        Kollisionswahrsch.: {col_str}
-    </p>
-    {'<div class="single-box">' + ids_html + '</div>' if count == 1 else ids_html}
-    {copy_all_btn}
-    <script>
-        function copyOne(i) {{
-            const el = document.getElementById('id-' + i);
-            navigator.clipboard.writeText(el.innerText).then(() => {{
-                el.style.background = '#d4edda';
-                setTimeout(() => el.style.background = '', 1000);
-            }});
-        }}
-        function copyAll() {{
-            const els = document.querySelectorAll('.id-value');
-            const text = Array.from(els).map(e => e.innerText).join('\\n');
-            navigator.clipboard.writeText(text);
-        }}
-    </script>
-</body>
-</html>"""
+        response.content_type = 'text/html; charset=utf-8'
+        return bottle.template('nanoid', ids=ids, count=count, meta=meta,
+                               col_str=col_str, template_lookup=TEMPLATE_LOOKUP)
 
     else:  # plain text
         response.content_type = 'text/plain; charset=utf-8'

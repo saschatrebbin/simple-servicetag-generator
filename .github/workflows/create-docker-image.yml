@@ -23,6 +23,10 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.14'
+      - name: Set up Node.js for clipboard tests
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
       - name: Install runtime dependencies
         run: python -m pip install -r app/requirements.txt
       - name: Run tests
@@ -56,6 +60,9 @@ jobs:
             sleep 1
           done
           curl --fail --silent 'http://127.0.0.1:3000/api/v2/identifier.json' | python3 -c 'import json, sys; data = json.load(sys.stdin); assert len(data["identifiers"]) == 1; assert data["identifiers"][0]["long"] and data["identifiers"][0]["short"]'
+          curl --fail --silent 'http://127.0.0.1:3000/api/v2/nanoid.html?prefix=%3Cb%3E' | python3 -c 'import sys; page = sys.stdin.read(); assert "&lt;b&gt;" in page and "<b>" not in page'
+          curl --fail --silent 'http://127.0.0.1:3000/api/v2/identifier.html' | python3 -c 'import sys; page = sys.stdin.read(); assert "identifier-list" in page and "clipboard" in page'
+          curl --fail --silent 'http://127.0.0.1:3000/api/v2/password.html?words=2&numbers=0&separator=%3C' | python3 -c 'import sys; page = sys.stdin.read(); assert "Generated Password" in page and "&lt;" in page'
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

@@ -103,14 +103,14 @@ Generator randomness, entropy, collision limits, and suitable-use considerations
 
 ## 7. Tests, build, and publication
 
-The GitHub Actions build-and-publish workflow runs for pull requests targeting `master` and pushes to `master`. Its test job installs the runtime dependency and runs the test suite under Python 3.14 and Node.js 24. A following job builds a local image and smoke-tests `/health`, V2 Identifier JSON, and the three V2 HTML pages. Only a successful push to `master` proceeds to the separate build-and-publish job for GitHub Container Registry.
+The GitHub Actions build-and-publish workflow runs for pull requests targeting `main` and pushes to `main`. Its test job installs the runtime dependency and runs the test suite under Python 3.14 and Node.js 24. A following job builds a local image and smoke-tests `/health`, V2 Identifier JSON, and the three V2 HTML pages. Only a successful push to `main` proceeds to the separate build-and-publish job for GitHub Container Registry. The published image temporarily retains the tag `ghcr.io/saschatrebbin/simple-servicetag-generator:master`; see the [branch rename decision](decisions/0004-rename-default-branch.md).
 
 ```mermaid
 flowchart TD
-    Pull["Pull request to master"] --> Tests["Run Python unit tests"]
-    Push["Push to master"] --> Tests
+    Pull["Pull request to main"] --> Tests["Run Python unit tests"]
+    Push["Push to main"] --> Tests
     Tests --> Check["Build and smoke-test image"]
-    Check --> Event{"Push to master?"}
+    Check --> Event{"Push to main?"}
     Event -->|"Yes"| Publish["Build and publish to GHCR"]
     Event -->|"No"| Done["Checks complete"]
 ```
@@ -118,6 +118,10 @@ flowchart TD
 The publish job performs its own image build after the smoke-test job. The Python tests cover the V2 Identifier, password regressions, HTML escaping and `APP_DEBUG` startup and HTTP error handling. The same test command invokes Node.js tests for the shared clipboard script with a simulated DOM and clipboard. These are not full browser tests.
 
 A separate test-only workflow runs the full suite under Python 3.14 and Node.js 24 when `development` is pushed or the workflow is manually dispatched for that branch. It neither builds nor publishes an image. See [running tests](workflows.md#running-tests) and the [development test decision](decisions/0002-development-test-workflow.md).
+
+### Previous default branch
+
+Before the default-branch rename on 2026-11-28 for [issue #35](https://github.com/saschatrebbin/simple-servicetag-generator/issues/35), the default branch was `master` and the image tag was derived from its name. The branch was renamed to `main` to align repository naming; the existing `:master` image tag is explicitly retained until the tagging strategy is decided.
 
 ## 8. Related documents
 

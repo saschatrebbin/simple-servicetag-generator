@@ -35,7 +35,7 @@ The shared word list now includes `golf`; consequently, it can also occur in exi
 
 Run `python -m unittest discover -s tests -v` with the application's dependencies installed (`python -m pip install -r app/requirements.txt`) and Node.js 24 available. The Python test run includes the Node.js clipboard tests; Node.js is not needed at runtime. See [running tests](docs/workflows.md#running-tests) for individual test commands and the test-only workflow for `development`.
 
-The application image uses Python 3.14. Pull requests targeting `master` run tests on Python 3.14 and Node.js 24, build the Docker image without publishing it, and smoke-test the running container. Pushes to `master` run the same checks before publishing the image to GitHub Container Registry. The Dockerfile copies only the application, its templates, and runtime requirements; tests and test output are also excluded from the Docker build context.
+The application image uses Python 3.14. Pull requests targeting `main` run tests on Python 3.14 and Node.js 24, build the Docker image without publishing it, and smoke-test the running container. Pushes to `main` run the same checks before publishing the image to GitHub Container Registry. The image continues to use the tag `ghcr.io/saschatrebbin/simple-servicetag-generator:master` temporarily; see the [branch rename decision](docs/decisions/0004-rename-default-branch.md). The Dockerfile copies only the application, its templates, and runtime requirements; tests and test output are also excluded from the Docker build context.
 
 See the [architecture overview](docs/architecture.md), [project scope](docs/scope.md), and [cryptographic foundations](docs/cryptography.md) for further details.
 

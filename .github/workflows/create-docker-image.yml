@@ -2,9 +2,9 @@ name: Test, build, and publish Docker image
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, main]
   push:
-    branches: [master]
+    branches: [master, main]
 
 permissions:
   contents: read
@@ -65,7 +65,7 @@ jobs:
           curl --fail --silent 'http://127.0.0.1:3000/api/v2/password.html?words=2&numbers=0&separator=%3C' | python3 -c 'import sys; page = sys.stdin.read(); assert "Generated Password" in page and "&lt;" in page'
 
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
     needs: [test, image-check]
     runs-on: ubuntu-latest
     permissions:
@@ -85,6 +85,9 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Keep the existing production tag while the default branch is renamed.
+          tags: |
+            type=raw,value=master
       - name: Build and publish Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
